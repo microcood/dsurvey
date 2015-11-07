@@ -1,3 +1,10 @@
+def generate_filename(self, filename):
+    from unidecode import unidecode
+    path = self.__class__.__name__.lower()
+    url = "%s/%s" % (path, unidecode(filename))
+    return url
+
+
 def get_questions_from_file(test):
     import string
     from .models import Question, Answer

@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.functional import cached_property
 from django.contrib.auth.models import User
+from .utils import generate_filename
 
 
 class Group(models.Model):
@@ -43,7 +44,7 @@ class Test(models.Model):
         verbose_name = 'Дополнительный комментарий', blank=True, null=True)
     created = models.DateTimeField(verbose_name = 'Дата создания', auto_now_add=True)
     updated = models.DateTimeField(verbose_name = 'Дата обновления', auto_now=True)
-    file = models.FileField(verbose_name = 'Файл', upload_to='tests')
+    file = models.FileField(verbose_name = 'Файл', upload_to=generate_filename)
 
     @property
     def questions(self):
