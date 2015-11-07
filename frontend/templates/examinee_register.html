@@ -1,0 +1,21 @@
+{% extends '_base.html' %}
+{% load i18n foundation %}
+{% block title %} Вход {% endblock %}
+
+{% block content %}
+  <div class="row">
+    <form action="" method="post" class="medium-8 medium-offset-2">
+      {% csrf_token %}
+      <br>
+        {{ form|foundationinline }}
+        <div class="row ">
+          <div class="small-9 columns right">
+            <button class="button small" type="submit">Вход</button>
+          </div>
+        </div>
+
+      </div>
+
+    </form>
+  </div>
+{% endblock %}

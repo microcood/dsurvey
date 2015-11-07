@@ -1,0 +1,12 @@
+@import '../bower_components/foundation/scss/normalize';
+@import '../bower_components/foundation/scss/foundation';
+
+.page-header {
+  padding-top: 20px;
+}
+.color-gray * {
+  color: #828282;
+}
+.color-green * {
+  color: darken($success-color, 20%);
+}

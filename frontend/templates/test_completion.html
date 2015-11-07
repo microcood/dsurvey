@@ -1,0 +1,36 @@
+{% extends '_base.html' %}
+
+{% block title %}
+  Тест {{ test.name }}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <h2 class="page-header">{{ test.name }}</h2>
+  <form action="" method="post">
+      {% csrf_token %}
+      {% for question in test.questions %}
+      <fieldset>
+        <legend>
+          <span class="radius secondary label">№{{ question.position }}</span>
+        </legend>
+        <label style="padding-bottom:10px">
+          <strong>{{ question.text }}</strong>
+        </label>
+          {% for answer in question.answers %}
+          <div class="row collapse" style="margin-bottom: 5px">
+            <div class="left">
+              <input type="checkbox" name="{{ question.id }}" value="{{ answer.id }}" style="margin-bottom:5px; margin-right: 10px" id="{{ answer.id }}">
+            </div>
+              <label for="{{ answer.id }}" style="display: inline">
+                {{ answer.text }}
+              </label>
+          </div>
+          {% endfor %}
+
+      </fieldset>
+      {% endfor %}
+      <button type="submit" class="button small">Отправить</button>
+  </form>
+</div>
+{% endblock %}

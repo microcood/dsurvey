@@ -1,0 +1,23 @@
+{
+  "name": "iqline-django-frontend",
+  "description": "",
+  "main": "index.js",
+  "authors": [
+    "Micwaits Microcood <microcood@gmail.com>"
+  ],
+  "license": "ISC",
+  "moduleType": [],
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "foundation": "~5.5.3",
+    "livereload-js": "livereload#~2.2.1"
+  }
+}

@@ -1,0 +1,47 @@
+{% load staticfiles i18n %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'dist/css/app.css' %}">
+    {% block extrastyle %}{% endblock %}
+    {% block extrahead %}{% endblock %}
+  </head>
+  <body class="antialiased">
+    {% block header %}
+    <div class="contain-to-grid">
+      <nav class="top-bar" data-topbar role="navigation" data-options="sticky_on: large">
+        <div class="top-bar-section" style="color: #fff">
+        {% if view.examinee and request.user.is_staff %}
+          {{ view.examinee.first_name }} {{ view.examinee.last_name }}
+        {% elif request.user.is_authenticated %}
+          {{ request.user.first_name }} {{ request.user.last_name }}
+          <ul class="right">
+            <li >
+              <a href="{% url "logout" %}" class="small button secondary">Выход</a>
+            </li>
+          </ul>
+        {% else %}
+            {% now  'd.m.Y' %}
+        {% endif %}
+        </div>
+      </nav>
+    </div>
+    {% endblock %}
+
+    {% if messages %}
+    <div class="row">
+      <br>
+      <div data-alert="" class="alert-box alert">
+       {% for message in messages %}
+            {{ message }} <br>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% block content %}
+    {% endblock %}
+  </body>
+</html>
