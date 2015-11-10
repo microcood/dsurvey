@@ -124,7 +124,7 @@ class TestCompletionView(SurveyAccessMixin, DetailView):
         return redirect('test_result', pk=test.pk)
 
 
-class ExaminationResultView(SurveyAccessMixin, ListView):
+class ExaminationResultView(ListView):
     model = TestResponse
     template_name = 'examination_result.html'
 
@@ -138,7 +138,7 @@ class ExaminationResultView(SurveyAccessMixin, ListView):
         return self.model.objects.filter(examination=self.examination)
 
 
-class MostFailedQuestionsView(SurveyAccessMixin, ListView):
+class MostFailedQuestionsView(ListView):
     model = Question
     template_name = 'examination_failed.html'
 
@@ -165,7 +165,7 @@ class MostFailedQuestionsView(SurveyAccessMixin, ListView):
                 else:
                     bad_questions[question.pk] += 1
         bad_list = [key for key, value in bad_questions.items() if value > self.level]
-        
+
         qs = self.model.objects.filter(test=self.examination.test)
         qs = qs.filter(pk__in=bad_list)
         return qs
