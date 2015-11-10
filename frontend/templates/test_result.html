@@ -7,7 +7,7 @@
 {% block content %}
   <div class="row">
     <h2 class="page-header">{{ test.name }}</h2>
-    <h4 class="subheader">Итоговый результат {{ results|floatformat:'2' }}%</h4>
+    <h4 class="subheader">Итоговый результат <span class="{% if results > 70 %}color-green{% endif %} ">{{ results|floatformat:'2' }}%</span></h4>
         {% for question in questions %}
         <fieldset>
 
