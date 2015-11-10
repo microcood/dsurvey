@@ -31,7 +31,7 @@ class Examinee(models.Model):
     group = models.ForeignKey(Group, verbose_name = 'Группа')
 
     def __str__(self):
-        return self.first_name + ' ' + self.last_name
+        return '%s %s %s' % (self.last_name, self.first_name, self.middle_name)
 
     class Meta:
         verbose_name = 'Проверяемый'
@@ -61,6 +61,7 @@ class Test(models.Model):
 class Examination(models.Model):
     group = models.ForeignKey(Group, verbose_name = 'Группа')
     test = models.ForeignKey(Test, verbose_name = 'Тест')
+    created = models.DateTimeField(verbose_name = 'Дата тестирования', auto_now_add=True)
     is_ongoing = models.BooleanField(verbose_name = 'Продолжается в данный момент', default=False)
 
     @classmethod
@@ -79,7 +80,7 @@ class Examination(models.Model):
         super(Examination, self).save()
 
     class Meta:
-        verbose_name = 'Тестирорвание'
+        verbose_name = 'Тестирование'
         verbose_name_plural = 'Тестирования'
 
 

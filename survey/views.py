@@ -1,11 +1,12 @@
 from unidecode import unidecode
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.core.urlresolvers import reverse
 from django.views.generic import FormView, RedirectView, DetailView, ListView
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.core.exceptions import PermissionDenied
 from django.forms.models import modelform_factory
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from .models import *
@@ -186,3 +187,46 @@ class TestResultView(SurveyAccessMixin, DetailView):
         context['results'] = results
         context['test_response'] = test_response
         return context
+
+
+@staff_member_required
+def examination_excel(request, pk):
+    import xlsxwriter
+    import io
+    import datetime
+
+    examination = get_object_or_404(Examination, pk=pk)
+    test_responses = TestResponse.objects.filter(examination=examination)
+
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = 'attachment; filename=examination_%s.xlsx' % examination.pk
+
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet()
+
+    header_format = workbook.add_format()
+    header_format.set_bold()
+    header_format.set_bg_color('silver')
+    worksheet.set_row(0, 30)
+    worksheet.set_column('A:A', 50)
+    worksheet.write(0, 0, 'ФИО', header_format)
+    worksheet.write(0, 1, 'Балл', header_format)
+    worksheet.write(0, 2, 'Дата', header_format)
+
+    row = 1
+    for obj in test_responses:
+        cformat = workbook.add_format()
+        if obj.result_percent > 70:
+            cformat.set_bg_color('green')
+        worksheet.set_row(row, 30)
+        worksheet.write(row, 0, str(obj.examinee))
+        worksheet.write(row, 1, '%s%s' % (obj.result_percent, '%'), cformat)
+        worksheet.write(row, 2, examination.created.strftime('%d.%m.%Y'))
+        row += 1
+
+    workbook.close()
+
+    output.seek(0)
+    response.write(output.read())
+    return response

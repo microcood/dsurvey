@@ -25,13 +25,19 @@ class TestAdmin(admin.ModelAdmin):
 @admin.register(Examination)
 class ExaminationAdmin(admin.ModelAdmin):
     list_display = ['id', 'group', 'test', 'is_ongoing']
-    readonly_fields = ('examination_results', )
+    readonly_fields = ('examination_results', 'export_xls')
 
     def examination_results(self, instance):
         if instance.pk:
             link =  reverse('examination_result',kwargs={ 'pk': instance.pk})
             return mark_safe('<a href="%s">Результаты</a>' % link)
         return 'Результатов тестирования на данный момент нет'
+
+    def export_xls(self, instance):
+        if instance.pk:
+            link =  reverse('examination_excel',kwargs={ 'pk': instance.pk})
+            return mark_safe('<a href="%s" targer="_blank">Результаты в excel</a>' % link)
+        return 'Результатов тестирования в excel тоже пока нет'
 
 
 @admin.register(Group)
