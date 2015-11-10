@@ -14,7 +14,7 @@
     <br>
       <form class="" action="." method="GET">
         Cтепень сбора ошибочных ответов - {{ view.level }} &nbsp;&nbsp;
-        <input type="range" name="level" value="{{ view.level }}" min="5" max="21" class=form-control>&nbsp;&nbsp;
+        <input type="range" name="level" value="{{ view.level }}" min="5" max="{{ view.examination.group.examinees.count }}}" class=form-control>&nbsp;&nbsp;
         <button class="button tiny" type="submit">Сменить</button>
       </form>
 
