@@ -1,0 +1,71 @@
+{% extends '_base.html' %}
+{% load i18n foundation %}
+{% block title %} Результаты {% endblock %}
+
+{% block content %}
+  <div class="row">
+    <h3 class="page-header">
+
+      <small>
+        группа <a href="{% url 'admin:survey_group_change' view.examination.group.pk  %}">{{ view.examination.group }}</a>
+        /
+        тест <a href="{% url 'admin:survey_test_change' view.examination.test.pk  %}">{{ view.examination.test }}</a></small>
+    </h3>
+    <br>
+      <form class="" action="." method="GET">
+        Cтепень сбора ошибочных ответов - {{ view.level }} &nbsp;&nbsp;
+        <input type="range" name="level" value="{{ view.level }}" min="3" max="12" class=form-control>&nbsp;&nbsp;
+        <button class="button tiny" type="submit">Сменить</button>
+      </form>
+
+      <br>
+    <table>
+      <thead>
+        <tr>
+          <th class="small-5">
+            Вопрос
+          </th>
+          <th>
+
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for object in object_list %}
+          <tr>
+            <td>
+              {{ object }}
+            </td>
+            <td>
+              <table class="small-12">
+                <thead>
+                  <tr>
+                    <th class="small-11">
+
+                    </th>
+                    <th>
+
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+
+                {% for answer in object.answers %}
+                  <tr>
+                    <td>
+                      {{ answer }}
+                    </td>
+                    <td>
+                      {% if answer.is_correct %}+{% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

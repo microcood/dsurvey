@@ -128,9 +128,47 @@ class ExaminationResultView(SurveyAccessMixin, ListView):
     model = TestResponse
     template_name = 'examination_result.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            raise PermissionDenied
+        return super(ExaminationResultView, self).dispatch(request, *args, **kwargs)
+
     def get_queryset(self, **kwargs):
         self.examination = Examination.objects.get(pk=self.kwargs['pk'])
         return self.model.objects.filter(examination=self.examination)
+
+
+class MostFailedQuestionsView(SurveyAccessMixin, ListView):
+    model = Question
+    template_name = 'examination_failed.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            raise PermissionDenied
+        return super(MostFailedQuestionsView, self).dispatch(request, *args, **kwargs)
+
+    def get_queryset(self, **kwargs):
+        self.level = int(self.request.GET.get('level', 5))
+
+        test_responses = TestResponse.objects.filter(examination=self.examination)
+        bad_questions = {}
+        for test_response in test_responses:
+            for question in self.examination.test.questions:
+                if not bad_questions.get(question.pk, None):
+                    bad_questions[question.pk] = 0
+                correct = question.answers.filter(is_correct=True)
+                replies = test_response.replies.filter(question=question)
+                correct_replies = replies.filter(answer__is_correct=True)
+
+                if correct.count() == replies.count() == correct_replies.count():
+                    pass
+                else:
+                    bad_questions[question.pk] += 1
+        bad_list = [key for key, value in bad_questions.items() if value > self.level]
+        self.examination = Examination.objects.get(pk=self.kwargs['pk'])
+        qs = self.model.objects.filter(test=self.examination.test)
+        qs = qs.filter(pk__in=bad_list)
+        return qs
 
 
 class TestResultView(SurveyAccessMixin, DetailView):
