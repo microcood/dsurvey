@@ -145,11 +145,11 @@ class MostFailedQuestionsView(SurveyAccessMixin, ListView):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_staff:
             raise PermissionDenied
+        self.examination = Examination.objects.get(pk=self.kwargs['pk'])
         return super(MostFailedQuestionsView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self, **kwargs):
         self.level = int(self.request.GET.get('level', 5))
-
         test_responses = TestResponse.objects.filter(examination=self.examination)
         bad_questions = {}
         for test_response in test_responses:
@@ -165,7 +165,7 @@ class MostFailedQuestionsView(SurveyAccessMixin, ListView):
                 else:
                     bad_questions[question.pk] += 1
         bad_list = [key for key, value in bad_questions.items() if value > self.level]
-        self.examination = Examination.objects.get(pk=self.kwargs['pk'])
+        
         qs = self.model.objects.filter(test=self.examination.test)
         qs = qs.filter(pk__in=bad_list)
         return qs
