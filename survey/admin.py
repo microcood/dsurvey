@@ -17,9 +17,7 @@ class QuestionInline(admin.TabularInline):
 
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
-    inlines = [
-        QuestionInline
-    ]
+    pass
 
 
 @admin.register(Examination)

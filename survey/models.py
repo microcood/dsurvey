@@ -45,6 +45,7 @@ class Test(models.Model):
     created = models.DateTimeField(verbose_name = 'Дата создания', auto_now_add=True)
     updated = models.DateTimeField(verbose_name = 'Дата обновления', auto_now=True)
     file = models.FileField(verbose_name = 'Файл', upload_to=generate_filename)
+    time = models.IntegerField(verbose_name = 'Время', default=3000)
 
     @property
     def questions(self):
