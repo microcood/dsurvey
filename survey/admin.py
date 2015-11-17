@@ -4,13 +4,12 @@ from django.contrib import admin
 from .models import *
 
 
-class AnswerInline(admin.StackedInline):
+class AnswerInline(admin.TabularInline):
     model = Answer
 
 
 class QuestionInline(admin.StackedInline):
     model = Question
-    list_filter = ('test', )
     inlines = [
         AnswerInline
     ]
@@ -56,6 +55,7 @@ class GroupAdmin(admin.ModelAdmin):
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ['id', 'text']
+    list_filter = ('test', )
     inlines = [
         AnswerInline
     ]
