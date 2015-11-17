@@ -8,8 +8,9 @@ class AnswerInline(admin.StackedInline):
     model = Answer
 
 
-class QuestionInline(admin.TabularInline):
+class QuestionInline(admin.StackedInline):
     model = Question
+    list_filter = ('test', )
     inlines = [
         AnswerInline
     ]
@@ -17,7 +18,7 @@ class QuestionInline(admin.TabularInline):
 
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
-    list_filter = ('test', )
+    pass
 
 
 @admin.register(Examination)
