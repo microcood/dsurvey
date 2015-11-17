@@ -17,7 +17,7 @@ class QuestionInline(admin.TabularInline):
 
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
-    pass
+    list_filter = ('test', )
 
 
 @admin.register(Examination)
