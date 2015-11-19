@@ -79,3 +79,4 @@ class ExamineeAdmin(admin.ModelAdmin):
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):
      list_display = ['id', 'text', 'is_correct']
+     search_fields = ['text']

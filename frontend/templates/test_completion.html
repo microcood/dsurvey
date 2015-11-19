@@ -90,7 +90,7 @@ initializeClock('countdown');
           <span class="radius secondary label">№{{ question.position }}</span>
         </legend>
         <label style="padding-bottom:10px">
-          <strong>{{ question.text }}</strong>
+          <strong>{{ question.text|safe }}</strong>
         </label>
           {% for answer in question.answers %}
           <div class="row collapse" style="margin-bottom: 5px">
@@ -98,7 +98,7 @@ initializeClock('countdown');
               <input type="checkbox" name="{{ question.id }}" value="{{ answer.id }}" style="margin-bottom:5px; margin-right: 10px" id="{{ answer.id }}">
             </div>
               <label for="{{ answer.id }}" style="display: inline">
-                {{ answer.text }}
+                {{ answer.text|safe }}
               </label>
           </div>
           {% endfor %}
