@@ -4,11 +4,11 @@ from django.contrib import admin
 from .models import *
 
 
-class AnswerInline(admin.StackedInline):
+class AnswerInline(admin.TabularInline):
     model = Answer
 
 
-class QuestionInline(admin.TabularInline):
+class QuestionInline(admin.StackedInline):
     model = Question
     inlines = [
         AnswerInline
@@ -17,21 +17,31 @@ class QuestionInline(admin.TabularInline):
 
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
-    inlines = [
-        QuestionInline
-    ]
+    pass
 
 
 @admin.register(Examination)
 class ExaminationAdmin(admin.ModelAdmin):
-    list_display = ['id', 'group', 'test', 'is_ongoing']
-    readonly_fields = ('examination_results', )
+    list_display = ['id', 'group', 'test', 'created', 'is_ongoing']
+    readonly_fields = ('examination_results', 'export_xls', 'most_failed')
 
     def examination_results(self, instance):
         if instance.pk:
-            link =  reverse('examination_result',kwargs={ 'pk': instance.pk})
+            link = reverse('examination_result',kwargs={ 'pk': instance.pk})
             return mark_safe('<a href="%s">Результаты</a>' % link)
         return 'Результатов тестирования на данный момент нет'
+
+    def export_xls(self, instance):
+        if instance.pk:
+            link = reverse('examination_excel',kwargs={ 'pk': instance.pk})
+            return mark_safe('<a href="%s">Результаты в excel</a>' % link)
+        return 'Результатов тестирования в excel тоже пока нет'
+
+    def most_failed(self, instance):
+        if instance.pk:
+            link = reverse('examination_failed',kwargs={ 'pk': instance.pk})
+            return mark_safe('<a href="%s">Самые трудные вопросы</a>' % link)
+        return 'Тут тоже пусто'
 
 
 @admin.register(Group)
@@ -45,6 +55,7 @@ class GroupAdmin(admin.ModelAdmin):
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ['id', 'text']
+    list_filter = ('test', )
     inlines = [
         AnswerInline
     ]
@@ -68,3 +79,4 @@ class ExamineeAdmin(admin.ModelAdmin):
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):
      list_display = ['id', 'text', 'is_correct']
+     search_fields = ['text']

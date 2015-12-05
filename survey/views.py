@@ -1,11 +1,12 @@
 from unidecode import unidecode
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.core.urlresolvers import reverse
 from django.views.generic import FormView, RedirectView, DetailView, ListView
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.core.exceptions import PermissionDenied
 from django.forms.models import modelform_factory
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from .models import *
@@ -123,13 +124,51 @@ class TestCompletionView(SurveyAccessMixin, DetailView):
         return redirect('test_result', pk=test.pk)
 
 
-class ExaminationResultView(SurveyAccessMixin, ListView):
+class ExaminationResultView(ListView):
     model = TestResponse
     template_name = 'examination_result.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            raise PermissionDenied
+        return super(ExaminationResultView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self, **kwargs):
         self.examination = Examination.objects.get(pk=self.kwargs['pk'])
         return self.model.objects.filter(examination=self.examination)
+
+
+class MostFailedQuestionsView(ListView):
+    model = Question
+    template_name = 'examination_failed.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            raise PermissionDenied
+        self.examination = Examination.objects.get(pk=self.kwargs['pk'])
+        return super(MostFailedQuestionsView, self).dispatch(request, *args, **kwargs)
+
+    def get_queryset(self, **kwargs):
+        self.level = int(self.request.GET.get('level', 5))
+        test_responses = TestResponse.objects.filter(examination=self.examination)
+        bad_questions = {}
+        for test_response in test_responses:
+            for question in self.examination.test.questions:
+                if not bad_questions.get(question.pk, None):
+                    bad_questions[question.pk] = 0
+                correct = question.answers.filter(is_correct=True)
+                replies = test_response.replies.filter(question=question)
+                correct_replies = replies.filter(answer__is_correct=True)
+
+                if correct.count() == replies.count() == correct_replies.count():
+                    pass
+                else:
+                    bad_questions[question.pk] += 1
+        bad_list = [key for key, value in bad_questions.items() if value > self.level]
+
+        qs = self.model.objects.filter(test=self.examination.test)
+        qs = qs.filter(pk__in=bad_list)
+        return qs
 
 
 class TestResultView(SurveyAccessMixin, DetailView):
@@ -186,3 +225,46 @@ class TestResultView(SurveyAccessMixin, DetailView):
         context['results'] = results
         context['test_response'] = test_response
         return context
+
+
+@staff_member_required
+def examination_excel(request, pk):
+    import xlsxwriter
+    import io
+    import datetime
+
+    examination = get_object_or_404(Examination, pk=pk)
+    test_responses = TestResponse.objects.filter(examination=examination)
+
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = 'attachment; filename=examination_%s.xlsx' % examination.pk
+
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet()
+
+    header_format = workbook.add_format()
+    header_format.set_bold()
+    header_format.set_bg_color('silver')
+    worksheet.set_row(0, 30)
+    worksheet.set_column('A:A', 50)
+    worksheet.write(0, 0, 'ФИО', header_format)
+    worksheet.write(0, 1, 'Балл', header_format)
+    worksheet.write(0, 2, 'Дата', header_format)
+
+    row = 1
+    for obj in test_responses:
+        cformat = workbook.add_format()
+        if obj.result_percent > 70:
+            cformat.set_bg_color('green')
+        worksheet.set_row(row, 30)
+        worksheet.write(row, 0, str(obj.examinee))
+        worksheet.write(row, 1, '%s%s' % (obj.result_percent, '%'), cformat)
+        worksheet.write(row, 2, examination.created.strftime('%d.%m.%Y'))
+        row += 1
+
+    workbook.close()
+
+    output.seek(0)
+    response.write(output.read())
+    return response

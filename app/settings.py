@@ -35,7 +35,7 @@ from socket import gethostname
 ALLOWED_HOSTS = [
     gethostname(), # For internal OpenShift load balancer security purposes.
     os.environ.get('OPENSHIFT_APP_DNS', 'localhost'), # Dynamically map to the OpenShift gear name.
-    #'example.com', # First DNS alias (set up in the app)
+    'odna.co', # First DNS alias (set up in the app)
     #'www.example.com', # Second DNS alias (set up in the app)
 ]
 
@@ -139,7 +139,7 @@ for logger in LOGGING['loggers']:
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
 TIME_ZONE = 'UTC'
 

@@ -4,6 +4,81 @@
   Тест {{ test.name }}
 {% endblock %}
 
+{% block extrastyle %}
+<style>
+  body {
+    padding-top: 60px;
+  }
+  .contain-to-grid {
+    position: fixed;
+    z-index: 200;
+    top: 0;
+    left: 0;
+  }
+  #countdown {
+    font-size: 24px;
+    padding: 2px 20px;
+    display: inline-block;
+    margin-right: 40px;
+    color: rgb(255, 133, 133);
+    font-weight: bold;
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+initSeconds = localStorage.getItem('seconds_{{ user.username }}') || {{ test.time }}
+function getTimeRemaining(secons){
+
+localStorage.setItem('seconds_{{ user.username }}', initSeconds);
+
+var t = secons;
+var seconds = Math.floor( (t) % 60 );
+var minutes = Math.floor( (t/60) % 60 );
+var hours = Math.floor( (t/(60*60)) % 24 );
+
+return {
+  'hours': hours,
+  'minutes': minutes,
+  'seconds': seconds
+};
+}
+
+function initializeClock(id, endtime){
+var clock = document.getElementById(id);
+var hoursSpan = clock.querySelector('.hours');
+var minutesSpan = clock.querySelector('.minutes');
+var secondsSpan = clock.querySelector('.seconds');
+
+function updateClock(){
+  initSeconds--
+  var t = getTimeRemaining(initSeconds);
+
+  hoursSpan.innerHTML = ('0' + t.hours).slice(-2);
+  minutesSpan.innerHTML = ('0' + t.minutes).slice(-2);
+  secondsSpan.innerHTML = ('0' + t.seconds).slice(-2);
+
+  if(initSeconds<=0){
+    clearInterval(timeinterval);
+  }
+}
+
+updateClock();
+var timeinterval = setInterval(updateClock, 1000);
+}
+
+initializeClock('countdown');
+</script>
+{% endblock %}
+{% block advanced %}
+<li>
+  <span id="countdown" class="small">
+    <span class="hours"></span>:<span class="minutes"></span>:<span class="seconds"></span>
+  </span>
+</li>
+{% endblock %}
+
 {% block content %}
 <div class="row">
   <h2 class="page-header">{{ test.name }}</h2>
@@ -15,7 +90,7 @@
           <span class="radius secondary label">№{{ question.position }}</span>
         </legend>
         <label style="padding-bottom:10px">
-          <strong>{{ question.text }}</strong>
+          <strong>{{ question.text|safe }}</strong>
         </label>
           {% for answer in question.answers %}
           <div class="row collapse" style="margin-bottom: 5px">
@@ -23,7 +98,7 @@
               <input type="checkbox" name="{{ question.id }}" value="{{ answer.id }}" style="margin-bottom:5px; margin-right: 10px" id="{{ answer.id }}">
             </div>
               <label for="{{ answer.id }}" style="display: inline">
-                {{ answer.text }}
+                {{ answer.text|safe }}
               </label>
           </div>
           {% endfor %}

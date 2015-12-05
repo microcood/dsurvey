@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.functional import cached_property
 from django.contrib.auth.models import User
+from .utils import generate_filename
 
 
 class Group(models.Model):
@@ -30,7 +31,7 @@ class Examinee(models.Model):
     group = models.ForeignKey(Group, verbose_name = 'Группа')
 
     def __str__(self):
-        return self.first_name + ' ' + self.last_name
+        return '%s %s %s' % (self.last_name, self.first_name, self.middle_name)
 
     class Meta:
         verbose_name = 'Проверяемый'
@@ -43,7 +44,8 @@ class Test(models.Model):
         verbose_name = 'Дополнительный комментарий', blank=True, null=True)
     created = models.DateTimeField(verbose_name = 'Дата создания', auto_now_add=True)
     updated = models.DateTimeField(verbose_name = 'Дата обновления', auto_now=True)
-    file = models.FileField(verbose_name = 'Файл', upload_to='tests')
+    file = models.FileField(verbose_name = 'Файл', upload_to=generate_filename)
+    time = models.IntegerField(verbose_name = 'Время', default=3000)
 
     @property
     def questions(self):
@@ -60,6 +62,7 @@ class Test(models.Model):
 class Examination(models.Model):
     group = models.ForeignKey(Group, verbose_name = 'Группа')
     test = models.ForeignKey(Test, verbose_name = 'Тест')
+    created = models.DateTimeField(verbose_name = 'Дата тестирования', auto_now_add=True)
     is_ongoing = models.BooleanField(verbose_name = 'Продолжается в данный момент', default=False)
 
     @classmethod
@@ -78,7 +81,7 @@ class Examination(models.Model):
         super(Examination, self).save()
 
     class Meta:
-        verbose_name = 'Тестирорвание'
+        verbose_name = 'Тестирование'
         verbose_name_plural = 'Тестирования'
 
 
