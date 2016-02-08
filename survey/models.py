@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.utils.functional import cached_property
 from django.contrib.auth.models import User
-from .utils import generate_filename
+from .utils import generate_filename, generate_code
 
 
 class Group(models.Model):
@@ -11,6 +11,7 @@ class Group(models.Model):
     created = models.DateTimeField(verbose_name = 'Дата создания', auto_now_add=True)
     comments = models.TextField(
         verbose_name = 'Дополнительный комментарий', blank=True, null=True)
+    code = models.CharField(max_length=10, unique=True, default=generate_code)
 
     @property
     def examinees(self):

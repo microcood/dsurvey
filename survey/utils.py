@@ -5,6 +5,11 @@ def generate_filename(self, filename):
     return url
 
 
+def generate_code():
+    import random
+    return random.randint(1000, 99999)
+
+
 def get_questions_from_file(test):
     import string
     from .models import Question, Answer
