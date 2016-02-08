@@ -17,6 +17,8 @@ REPO_DIR = os.path.dirname(WSGI_DIR)
 DATA_DIR = os.environ.get('OPENSHIFT_DATA_DIR', BASE_DIR)
 
 import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 sys.path.append(os.path.join(REPO_DIR, 'libs'))
 import secrets
 SECRETS = secrets.getter(os.path.join(DATA_DIR, 'secrets.json'))
@@ -157,3 +159,8 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(REPO_DIR, 'wsgi', 'static')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(DATA_DIR, 'media')
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
