@@ -17,8 +17,6 @@ REPO_DIR = os.path.dirname(WSGI_DIR)
 DATA_DIR = os.environ.get('OPENSHIFT_DATA_DIR', BASE_DIR)
 
 import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
 sys.path.append(os.path.join(REPO_DIR, 'libs'))
 import secrets
 SECRETS = secrets.getter(os.path.join(DATA_DIR, 'secrets.json'))
