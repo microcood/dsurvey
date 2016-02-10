@@ -1,0 +1,37 @@
+{% extends '_base.html' %}
+{% load i18n foundation %}
+{% block title %} Вход {% endblock %}
+
+{% block content %}
+<div class="row">
+   <br>
+   <form action="{% url "examinee_register" group.code %}" method="post" class="medium-8 medium-offset-2">
+     {% csrf_token %}
+     <h5 class="medium-9 columns right">Введите данные:</h5>
+     <br>
+       {{ create_form|foundationinline }}
+       <div class="row ">
+         <div class="large-9 columns right">
+           <button class="button tiny" type="submit">Отправить</button>
+         </div>
+       </div>
+     </form>
+</div>
+{% if group.examinee_set.all %}
+<div class="row">
+  <br>
+  <form action="" method="post" class="medium-8 medium-offset-2">
+    {% csrf_token %}
+    <h5 class="medium-9 columns right">Или найдите себя в списке:</h5>
+    <br>
+      {{ select_form|foundationinline }}
+      <div class="row ">
+        <div class="large-9 columns right">
+          <button class="button tiny" type="submit">Выбрать</button>
+          <p class="text-center"></p>
+        </div>
+      </div>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

@@ -28,10 +28,10 @@
 
 {% block scripts %}
 <script>
-initSeconds = localStorage.getItem('seconds_{{ user.username }}') || {{ test.time }}
+initSeconds = localStorage.getItem('seconds_{{ user.username }}_{% now "dDm" %}') || {{ test.time }}
 function getTimeRemaining(secons){
 
-localStorage.setItem('seconds_{{ user.username }}', initSeconds);
+localStorage.setItem('seconds_{{ user.username }}_{% now "dDm" %}', initSeconds);
 
 var t = secons;
 var seconds = Math.floor( (t) % 60 );

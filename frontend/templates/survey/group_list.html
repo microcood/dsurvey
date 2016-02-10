@@ -1,0 +1,29 @@
+{% extends '_base.html' %}
+{% load i18n foundation %}
+{% block title %} Вход {% endblock %}
+
+{% block content %}
+  <div class="row">
+    <br>
+    <div class="row">
+       <br>
+       <form action="" method="post" class="medium-6 medium-offset-4 columns">
+                {% csrf_token %}
+                <h5 class="text-center">Введите номер группы:</h5>
+                <br>
+                 <div class="">
+                   <div class="row">
+
+                     <div class="large-9 columns">
+                       <input id="id_group_code" name="group_code" type="number" />
+                     </div>
+                     <div class="large-3 columns">
+                         <button class="button tiny" type="submit">Подтвердить</button>
+                     </div>
+
+                 </div>
+                 </div>
+              </form>
+    </div>
+  </div>
+{% endblock %}

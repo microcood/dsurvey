@@ -18,7 +18,7 @@ class Group(models.Model):
         return Examinee.objects.filter(group=self.pk)
 
     def __str__(self):
-        return (self.name)
+        return '%s — %s' % (self.code, self.name)
 
     class Meta:
         verbose_name = 'Группа'
@@ -71,17 +71,17 @@ class Examination(models.Model):
     @classmethod
     def get_ongoing(self):
         try:
-            return self.objects.get(is_ongoing=True)
+            return self.objects.filter(is_ongoing=True)
         except self.DoesNotExist:
             return None
 
-    def save(self):
-        if self.is_ongoing:
-            current = self.get_ongoing()
-            if current and current != self:
-                current.is_ongoing = False
-                current.save()
-        super(Examination, self).save()
+    # def save(self):
+    #     if self.is_ongoing:
+    #         current = self.get_ongoing()
+    #         if current and current != self:
+    #             current.is_ongoing = False
+    #             current.save()
+    #     super(Examination, self).save()
 
     class Meta:
         verbose_name = 'Тестирование'
@@ -130,19 +130,25 @@ class TestResponse(models.Model):
 
     @cached_property
     def result_percent(self):
-        questions = self.test.questions
+        questions = self.test.questions.values('id')
+        answers = Answer.objects.filter(question_id__in=questions).values('id', 'is_correct', 'question_id')
+        replies = self.replies.values('id', 'answer_id', 'question_id')
+        # replies_len = len(replies)
         total_sum = 0
-        for question in questions:
-            correct = question.answers.filter(is_correct=True)
-            replies = self.replies.filter(question=question)
-            correct_replies = replies.filter(answer__is_correct=True)
-
-            if correct.count() == replies.count() == correct_replies.count():
+        for q in questions:
+            total_q = [ a['question_id'] for a in answers if a['question_id'] == q['id']]
+            correct = [ a['question_id']+a['id'] for a in answers if a['is_correct'] and a['question_id'] == q['id']]
+            correct_l = len(correct)
+            replies_q = [r for r in replies if r['question_id'] == q['id']]
+            replies_l = len(replies_q)
+            correct_replies_l = len([r for r in replies_q if r['question_id']+r['answer_id'] in correct])
+            if correct_l == replies_l == correct_replies_l:
                 total_sum += 1
-            elif correct_replies.count() > 0:
+            elif correct_replies_l > 0:
                 total_sum += 0.5
 
-        return (total_sum / questions.count()) * 100
+        return (total_sum / len(questions)) * 100
+        # return len(answers), len(replies), len(questions)
 
     class Meta:
         verbose_name = 'Результат теста'

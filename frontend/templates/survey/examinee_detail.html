@@ -1,0 +1,34 @@
+{% extends '_base.html' %}
+{% load i18n foundation %}
+{% block title %} Лобби {% endblock %}
+
+{% block content %}
+  <div class="row">
+    <br>
+    {% if done_tests %}
+    <h5>Пройденные тесты</h5>
+    <table class="medium-12">
+      <thead>
+        <tr>
+          <td>Тест</td>
+          <td>Результат</td>
+          <td></td>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+      {% for response in done_tests %}
+      <tr>
+        <td>{{ response.test.name }}</td>
+        <td>{{ response.result_percent }}%</td>
+        <td><a href="{% url "test_result" response.test.id %}">Подробнее</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+    {% for test in tests_todo %}
+      <a href="{% url "test_completion" test.id %}" class="button tiny">Пройти тест "{{ test.name }}" </a>
+      <br>
+    {% endfor %}
+  </div>
+{% endblock %}

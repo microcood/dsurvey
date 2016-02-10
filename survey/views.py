@@ -11,20 +11,105 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from .models import *
-# from survey.form import ResponseForm
+
+
+class IndexView(ListView):
+    model = Group
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated():
+            return redirect('home')
+        return super(IndexView, self).dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(IndexView, self).get_context_data(**kwargs)
+
+        from django import forms
+
+        class GroupForm(forms.Form):
+            group_code = forms.IntegerField(required=True, label='')
+        context['form'] = GroupForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        group_code = request.POST.get('group_code')
+        qs = self.model.objects.distinct().filter(examination__is_ongoing=True).values_list('code', flat=True)
+        if group_code not in qs:
+            messages.info(self.request, 'Номер введен не верно.')
+            return redirect('home')
+        return redirect('group', group_code=group_code)
+
+
+class GroupView(DetailView):
+    model = Group
+
+    def dispatch(self, request, *args, **kwargs):
+        self.code = kwargs.get('group_code')
+        self.examinations = Examination.objects.filter(is_ongoing=True,
+                                                       group__code=self.code)
+        if not self.examinations.exists() and not request.user.is_staff:
+            raise PermissionDenied
+        if request.user.is_authenticated():
+            return redirect('home')
+        return super(GroupView, self).dispatch(request, *args, **kwargs)
+
+    def get_object(self):
+        return get_object_or_404(Group, code=self.code)
+
+    def get_context_data(self, **kwargs):
+        context = super(GroupView, self).get_context_data(**kwargs)
+        context['create_form'] = modelform_factory(Examinee,
+                                                   exclude=('group', 'user'))
+        from django import forms
+
+        examinees = self.object.examinee_set.all().order_by('last_name')
+        form_choices = [(a.user.id, a) for a in examinees]
+
+        class UsersForm(forms.Form):
+            user = forms.ChoiceField(choices=form_choices,
+                                     label="Пользователь",
+                                     required=True)
+        context['select_form'] = UsersForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        user_id = request.POST.get('user')
+        user = get_object_or_404(User, id=user_id)
+        user.backend = 'django.contrib.auth.backends.ModelBackend'
+        login(self.request, user)
+        return redirect('home')
+
+
+class ExamineeView(DetailView):
+    model = Examinee
+
+    def dispatch(self, request, *args, **kwargs):
+        self.examinee_id = self.kwargs.get('examinee_id', None)
+        if request.user.is_staff:
+            if not self.examinee_id:
+                return redirect('admin:index')
+            else:
+                self.object = get_object_or_404(Examinee, id=self.examinee_id)
+        else:
+            if not hasattr(request.user, 'examinee'):
+                return redirect('index')
+            self.object = request.user.examinee
+        return super(ExamineeView, self).dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(ExamineeView, self).get_context_data(**kwargs)
+        context['done_tests'] = \
+            TestResponse.objects.filter(examinee_id=self.object.id)
+        context['tests_todo'] = Test.objects.filter(examination__is_ongoing=True, examination__group=self.object.group)
+        return context
+
+    def get_object(self):
+        return self.object
 
 
 class SurveyAccessMixin(object):
 
     def dispatch(self, request, *args, **kwargs):
-        self.examination = Examination.get_ongoing()
-        pk = kwargs.get('pk', None)
-        if ((not self.examination or pk != str(self.examination.test.pk)) and not request.user.is_staff):
-            messages.info(request, 'По данному адресу тестирований не проводится.')
-            raise PermissionDenied
-        elif not request.user.is_authenticated():
-            request.session['next_page'] = request.path
-            return redirect('examinee_register')
         return super(SurveyAccessMixin, self).dispatch(request, *args, **kwargs)
 
 
@@ -47,46 +132,42 @@ class ExamineeCreateView(FormView):
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated():
-            return redirect('welcome')
-        self.examination = Examination.get_ongoing()
-        if not self.examination:
-            messages.info(request, 'На данный момент тестирований не проводится.')
-            raise PermissionDenied
-        return super(ExamineeCreateView, self).dispatch(request, *args, **kwargs)
+            return redirect('index')
+        return super(ExamineeCreateView, self).dispatch(request,
+                                                        *args, **kwargs)
 
     def form_valid(self, form):
-        existing_examinee = Examinee.objects.filter(
-                group = self.examination.group,
-                first_name = form.instance.first_name,
-                middle_name = form.instance.middle_name,
-                last_name = form.instance.last_name,
+        group = get_object_or_404(Group, code=self.kwargs.get('group_code'))
+        existing_examinee = Examinee.objects.distinct().filter(
+                group=group,
+                first_name__icontains=form.instance.first_name,
+                middle_name__icontains=form.instance.middle_name,
+                last_name__icontains=form.instance.last_name,
             ).last()
 
         if existing_examinee:
-            print('hooray')
             user = existing_examinee.user
             user.backend = 'django.contrib.auth.backends.ModelBackend'
             login(self.request, user)
-            return redirect('welcome')
+            return redirect('home')
 
         import random
         user = User(
-            username='@%s%s' % (unidecode(form.instance.first_name), random.randint(0,10000)),
-            first_name = form.instance.first_name,
-            last_name = form.instance.last_name,
+            username='@%s%s' % (unidecode(form.instance.first_name),
+                                random.randint(0, 1000)),
+            first_name=form.instance.first_name,
+            last_name=form.instance.last_name,
             password='')
         user.save()
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         login(self.request, user)
         form.instance.user = user
-        form.instance.group = self.examination.group
+        form.instance.group = group
         form.save()
         return super(ExamineeCreateView, self).form_valid(form)
 
     def get_success_url(self, *args, **kwargs):
-        next_page = self.request.session.get('next_page', None)
-        self.request.session['next_page'] = None
-        return next_page or reverse('welcome')
+        return reverse('home')
 
 
 class TestCompletionView(SurveyAccessMixin, DetailView):
@@ -94,18 +175,25 @@ class TestCompletionView(SurveyAccessMixin, DetailView):
     template_name = 'test_completion.html'
 
     def dispatch(self, request, *args, **kwargs):
-        self.examinee = Examinee.objects.filter(user__pk=request.user.pk).last()
+        if not hasattr(request.user, 'examinee'):
+            return redirect('home')
+        self.object = get_object_or_404(Test, pk=self.kwargs.get('pk'))
+        self.examinee = request.user.examinee
+        self.examination = Examination.objects.filter(test=self.object,group=self.examinee.group, is_ongoing=True).last()
+        if not self.examination:
+            return redirect('home')
         return super(TestCompletionView, self).dispatch(request, *args, **kwargs)
 
-    def get(self, request, *args, **kwargs):
-        test_response = TestResponse.objects.filter(
-                examination=self.examination,
-                examinee=self.examinee
-            ).last()
-        if test_response:
-            messages.info(request, 'Вы уже прошли этот тест.')
-            raise PermissionDenied
-        return super(TestCompletionView, self).get(request, *args, **kwargs)
+    # def get(self, request, *args, **kwargs):
+    #     # self.examination = Examination.objects.filter(test=self.object,group=self.examinee.group)
+    #     # test_response = TestResponse.objects.filter(
+    #     #         examination=self.examination,
+    #     #         examinee=self.examinee
+    #     #     ).last()
+    #     # if test_response:
+    #     #     messages.info(request, 'Вы уже прошли этот тест.')
+    #     #     return redirect('home')
+    #     return super(TestCompletionView, self).get(request, *args, **kwargs)
 
 
     def post(self, request, *args, **kwargs):
@@ -176,30 +264,26 @@ class TestResultView(SurveyAccessMixin, DetailView):
     model = Test
     template_name = 'test_result.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_staff:
+            self.examinee = Examinee.objects.filter(pk=kwargs.get('examinee_id')).last()
+        elif request.user.is_authenticated():
+            self.examinee = request.user.examinee
+        else:
+            return redirect('home')
+        self.test_response = TestResponse.objects.filter(test=self.get_object(), examinee=self.examinee).last()
+        if not self.test_response:
+            return redirect('home')
+        return super(TestResultView, self).dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super(TestResultView, self).get_context_data(**kwargs)
-        examinee_id = self.kwargs.get('examinee_id', None)
-        if examinee_id:
-            try:
-                self.examinee = Examinee.objects.get(pk=examinee_id)
-            except:
-                messages.info(self.request, 'Результатов тестирования данного пользователя не найдено.')
-                raise Http404
-        else:
-            try:
-                self.examinee = self.request.user.examinee
-            except:
-                messages.info(self.request, 'Результатов вашего тестирования не найдено.')
-                raise Http404
-
-        test = self.get_object()
-        test_response = TestResponse.objects.filter(test=test, examinee=self.examinee).last()
-        total_count = test.questions.count()
+        total_count = self.object.questions.count()
         total_sum = 0
-        context_questions = test.questions
+        context_questions = self.object.questions
         for question in context_questions:
             correct = question.answers.filter(is_correct=True)
-            replies = test_response.replies.filter(question=question)
+            replies = self.test_response.replies.filter(question=question)
             correct_replies = replies.filter(answer__is_correct=True)
             question.correct_answers = []
             question.incorrect_answers = []
@@ -222,9 +306,9 @@ class TestResultView(SurveyAccessMixin, DetailView):
 
         results = (total_sum / total_count) * 100
         context['questions'] = context_questions
-        context['test'] = test
+        context['test'] = self.object
         context['results'] = results
-        context['test_response'] = test_response
+        context['test_response'] = self.test_response
         return context
 
 
