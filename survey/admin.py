@@ -61,11 +61,40 @@ class QuestionAdmin(admin.ModelAdmin):
         AnswerInline
     ]
 
+
 @admin.register(Examinee)
 class ExamineeAdmin(admin.ModelAdmin):
-    list_display = ['id', 'last_name', 'first_name', 'middle_name']
+    actions = ('merge', )
+    list_display = ['id', 'last_name', 'first_name', 'middle_name', 'group', 'exams']
+    readonly_fields = ('results', )
+    list_filter = ('group', )
 
+    def results(self, instance):
+        results = instance.testresponse_set.all().order_by("test__name")
+        if results:
+            result_string = '<table>'
+            for result in results:
+                result_string += '<tr><td>%s</td><td>%s&#37;</td></tr>' % \
+                                        (result.test, result.result_percent)
+            return result_string + '</table>'
+        return 'Нет результатов'
 
+    results.allow_tags = True
+    results.short_description = "Результаты"
+
+    def exams(self, instance):
+        return instance.testresponse_set.count()
+
+    exams.short_description = "Пройдено тестов"
+
+    def merge(self, request, queryset):
+        main = queryset[0]
+        tail = queryset[1:]
+        for dub in tail:
+            main.testresponse_set.add(*dub.testresponse_set.all())
+            dub.delete()
+
+    merge.short_description = "Объединить тесты"
 
 # @admin.register(TestResponse)
 # class TestResponseAdmin(admin.ModelAdmin):
