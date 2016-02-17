@@ -10,7 +10,7 @@ setup(
     author='Micwaits Microcood',
     author_email='microcood@gmail.com',
     install_requires=[
-        'Django>=1.9a1',
+        'Django>1.8',
         'python-docx',
         'pytz',
         'lxml',
