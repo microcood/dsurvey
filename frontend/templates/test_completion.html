@@ -28,44 +28,93 @@
 
 {% block scripts %}
 <script>
-initSeconds = localStorage.getItem('seconds_{{ user.username }}_{% now "dDm" %}') || {{ test.time }}
-function getTimeRemaining(secons){
+var QUESTIONS = {{ test.questions|length }}
+var TEST_TIME = {{ seconds_left }}
+var PRESAVE_URL = "{% url "test_completion_presave" test.pk %}"
+var initSeconds = TEST_TIME
+var form = oldForm = {}
+var testform = document.getElementById('testform')
+var answered = document.getElementById('answered')
+var submittest = document.getElementById('submittest')
+var modal = document.getElementById('modal')
+var closeModal = document.getElementById('closemodal')
 
-localStorage.setItem('seconds_{{ user.username }}_{% now "dDm" %}', initSeconds);
 
-var t = secons;
-var seconds = Math.floor( (t) % 60 );
-var minutes = Math.floor( (t/60) % 60 );
-var hours = Math.floor( (t/(60*60)) % 24 );
+var answeredQuestions = {}
+var formIsSaving = false
 
-return {
-  'hours': hours,
-  'minutes': minutes,
-  'seconds': seconds
-};
-}
-
-function initializeClock(id, endtime){
-var clock = document.getElementById(id);
-var hoursSpan = clock.querySelector('.hours');
-var minutesSpan = clock.querySelector('.minutes');
-var secondsSpan = clock.querySelector('.seconds');
-
-function updateClock(){
-  initSeconds--
-  var t = getTimeRemaining(initSeconds);
-
-  hoursSpan.innerHTML = ('0' + t.hours).slice(-2);
-  minutesSpan.innerHTML = ('0' + t.minutes).slice(-2);
-  secondsSpan.innerHTML = ('0' + t.seconds).slice(-2);
-
-  if(initSeconds<=0){
-    clearInterval(timeinterval);
+for (var i = 0; i < testform.elements.length; i++) {
+  if (testform.elements[i].checked) {
+    answeredQuestions[testform.elements[i].name] = true
   }
 }
 
+answered.innerHTML = Object.keys(answeredQuestions).length + "/" + QUESTIONS
+
+testform.addEventListener("change", function(e) {
+  if (e.target.checked) {
+    answeredQuestions[e.target.name] = true
+  } else {
+    delete answeredQuestions[e.target.name]
+  }
+  answered.innerHTML = Object.keys(answeredQuestions).length + "/" + QUESTIONS
+  if (!formIsSaving) {
+    formIsSaving = true
+    setTimeout(function(){
+      sendForm()
+      formIsSaving = false
+    }, 3000)
+  }
+})
+
+submittest.addEventListener("click", function(){
+  if (Object.keys(answeredQuestions).length != QUESTIONS) {
+    modal.style.display = "block"
+  } else {
+    testform.submit()
+  }
+})
+
+closemodal.addEventListener("click", function(){
+  modal.style.display = "none"
+})
+
+function sendForm() {
+  var formData = new FormData(testform)
+  formData.append("seconds_left", initSeconds)
+  var request = new XMLHttpRequest()
+  request.open("POST", PRESAVE_URL)
+  request.send(formData)
+}
+
+function getTimeRemaining(secons){
+  var t = secons;
+  var seconds = Math.floor((t) % 60)
+  var minutes = Math.floor((t/60) % 60)
+  var hours = Math.floor((t/(60*60)) % 24)
+
+  return {
+    'hours': hours,
+    'minutes': minutes,
+    'seconds': seconds
+  }
+}
+
+function initializeClock(id, endtime){
+  var clock = document.getElementById(id);
+  function updateClock(){
+    initSeconds--
+    var t = getTimeRemaining(initSeconds);
+
+    if(initSeconds<=0){
+      clock.innerHTML = "Потрачено"
+    } else {
+      clock.innerHTML = ('0' + t.hours).slice(-2) + ":" + ('0' + t.minutes).slice(-2) + ":" + ('0' + t.seconds).slice(-2);
+    }
+  }
+
 updateClock();
-var timeinterval = setInterval(updateClock, 1000);
+  var timeinterval = setInterval(updateClock, 1000);
 }
 
 initializeClock('countdown');
@@ -73,16 +122,21 @@ initializeClock('countdown');
 {% endblock %}
 {% block advanced %}
 <li>
-  <span id="countdown" class="small">
-    <span class="hours"></span>:<span class="minutes"></span>:<span class="seconds"></span>
-  </span>
+  <span id="countdown" class="small" style="margin-top: 3px;"></span>
 </li>
 {% endblock %}
 
 {% block content %}
-<div class="row">
+<div id="modal" style="display: none">
+  <div class="reveal-modal-bg" style="display: block;"></div>
+  <div class="reveal-modal small open text-center" tabindex="0" style="display: block; opacity: 1; visibility: visible; position: fixed; top: 100px;">
+    <h5>Вы не ответили на все вопросы!</h5>
+    <a id="closemodal" class="close-reveal-modal">×</a>
+  </div>
+</div>
+<div class="row" style="padding-bottom: 90px;">
   <h2 class="page-header">{{ test.name }}</h2>
-  <form action="" method="post">
+  <form id="testform" action="" method="post">
       {% csrf_token %}
       {% for question in test.questions %}
       <fieldset>
@@ -95,7 +149,7 @@ initializeClock('countdown');
           {% for answer in question.answers %}
           <div class="row collapse" style="margin-bottom: 5px">
             <div class="left">
-              <input type="checkbox" name="{{ question.id }}" value="{{ answer.id }}" style="margin-bottom:5px; margin-right: 10px" id="{{ answer.id }}">
+              <input type="checkbox" name="{{ question.id }}" value="{{ answer.id }}" style="margin-bottom:5px; margin-right: 10px" id="{{ answer.id }}" {% if answer.id in checked_questions %}checked="true"{% endif %}>
             </div>
               <label for="{{ answer.id }}" style="display: inline">
                 {{ answer.text|safe }}
@@ -105,7 +159,12 @@ initializeClock('countdown');
 
       </fieldset>
       {% endfor %}
-      <button type="submit" class="button small">Отправить</button>
   </form>
+</div>
+<div style="position:fixed; bottom: 0; height: 90px; left: 0; background-color: #fff; width: 100%; border-top: 1px solid #f0f0f0;">
+  <div class="row">
+    <button id="submittest" type="button" class="button small" style="margin-top: 23px; margin-right: 20px;">Отправить</button>
+    <span id="answered"></span>
+  </div>
 </div>
 {% endblock %}

@@ -32,5 +32,8 @@ urlpatterns = [
         name="test_result"),
     url(r'^test/(?P<pk>\d+)/$',
         TestCompletionView.as_view(),
-        name="test_completion")
+        name="test_completion"),
+    url(r'^test/(?P<pk>\d+)/presave/$',
+        TestInternResultsView.as_view(),
+        name="test_completion_presave")
 ]

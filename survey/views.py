@@ -184,22 +184,27 @@ class TestCompletionView(SurveyAccessMixin, DetailView):
             return redirect('home')
         return super(TestCompletionView, self).dispatch(request, *args, **kwargs)
 
-    # def get(self, request, *args, **kwargs):
-    #     # self.examination = Examination.objects.filter(test=self.object,group=self.examinee.group)
-    #     # test_response = TestResponse.objects.filter(
-    #     #         examination=self.examination,
-    #     #         examinee=self.examinee
-    #     #     ).last()
-    #     # if test_response:
-    #     #     messages.info(request, 'Вы уже прошли этот тест.')
-    #     #     return redirect('home')
-    #     return super(TestCompletionView, self).get(request, *args, **kwargs)
-
+    def get_context_data(self, **kwargs):
+        context = super(TestCompletionView, self).get_context_data(**kwargs)
+        presaved_results = TestResponsePresave.objects.filter(
+                                               test=self.object,
+                                               examinee=self.examinee,
+                                               examination=self.examination).last()
+        if presaved_results:
+            context['seconds_left'] = presaved_results.seconds_left
+            context['checked_questions'] = QuestionResponse.objects.filter(test_response=presaved_results).values_list('answer_id', flat=True)
+        else:
+            context['seconds_left'] = self.object.time
+        return context
 
     def post(self, request, *args, **kwargs):
         test = self.get_object()
         test_response = TestResponse(test=test, examinee=self.examinee, examination=self.examination)
         test_response.save()
+        presaved_results = TestResponsePresave.objects.filter(
+                                               test=self.object,
+                                               examinee=self.examinee,
+                                               examination=self.examination).delete()
         for question in test.questions:
             q_response = request.POST.getlist(str(question.id), None)
             if q_response:
@@ -211,6 +216,44 @@ class TestCompletionView(SurveyAccessMixin, DetailView):
                             answer=answer)
                         question_response.save()
         return redirect('test_result', pk=test.pk)
+
+
+class TestInternResultsView(DetailView):
+    model = Test
+
+    def dispatch(self, request, *args, **kwargs):
+        if not hasattr(request.user, 'examinee'):
+            return redirect('home')
+        self.object = get_object_or_404(Test, pk=self.kwargs.get('pk'))
+        self.examinee = request.user.examinee
+        self.examination = Examination.objects.filter(test=self.object,group=self.examinee.group, is_ongoing=True).last()
+        if not self.examination:
+            raise Http404()
+        return super(TestInternResultsView, self).dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        test = self.get_object()
+        test_response, created = TestResponsePresave.objects.get_or_create(
+                                            test=test,
+                                            examinee=self.examinee,
+                                            examination=self.examination)
+
+        test_response.seconds_left = request.POST.get("seconds_left", 0)
+        test_response.save()
+        if not created:
+            QuestionResponse.objects.filter(test_response=test_response).delete()
+        for question in test.questions:
+            q_response = request.POST.getlist(str(question.id), None)
+            if q_response:
+                for answer in question.answers:
+                    if str(answer.id) in q_response:
+                        question_response = QuestionResponse(
+                            test_response=test_response,
+                            question=question,
+                            answer=answer)
+                        question_response.save()
+        return HttpResponse()
+        # return super(TestInternResultsView, self).get(request, *args, **kwargs)
 
 
 class ExaminationResultView(ListView):

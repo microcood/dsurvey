@@ -75,14 +75,6 @@ class Examination(models.Model):
         except self.DoesNotExist:
             return None
 
-    # def save(self):
-    #     if self.is_ongoing:
-    #         current = self.get_ongoing()
-    #         if current and current != self:
-    #             current.is_ongoing = False
-    #             current.save()
-    #     super(Examination, self).save()
-
     class Meta:
         verbose_name = 'Тестирование'
         verbose_name_plural = 'Тестирования'
@@ -153,6 +145,11 @@ class TestResponse(models.Model):
     class Meta:
         verbose_name = 'Результат теста'
         verbose_name_plural = 'Результаты теста'
+
+
+class TestResponsePresave(TestResponse):
+    seconds_left = models.IntegerField(verbose_name='Оставшееся время',
+                                       default=0)
 
 
 class QuestionResponse(models.Model):
