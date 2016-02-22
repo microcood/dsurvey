@@ -324,7 +324,7 @@ class TestResultView(SurveyAccessMixin, DetailView):
         total_count = self.object.questions.count()
         total_sum = 0
         context_questions = self.object.questions
-        incorrect_questions = context_questions.filter(
+        incorrect_questions = self.test_response.replies.filter(
                         answer__is_correct=False).values_list('id', flat=True)
         results = self.test_response.result_percent
         context['questions'] = context_questions

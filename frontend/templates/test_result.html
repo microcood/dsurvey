@@ -14,7 +14,7 @@
           <legend>
             <span class="radius secondary label">№{{ question.position }}</span>
           </legend>
-          <label style="padding-bottom:10px" {% if question.id in incorrect_questions %}class="error"{% endif %}>
+          <label style="padding-bottom:10px; {% if question.id in incorrect_questions %}color:#008CBA;{% endif %}">
             <strong>{{ question.text }}</strong>
           </label>
         </fieldset>
