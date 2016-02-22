@@ -14,23 +14,9 @@
           <legend>
             <span class="radius secondary label">№{{ question.position }}</span>
           </legend>
-          <label style="padding-bottom:10px">
+          <label style="padding-bottom:10px" {% if question.id in incorrect_questions %}class="error"{% endif %}>
             <strong>{{ question.text }}</strong>
           </label>
-            {% for answer in question.answers %}
-            <div class="row collapse color-gray {% if answer.is_correct %}color-green{% endif %} {% if answer.pk in question.incorrect_answers %}error{% endif %}" style="margin-bottom: 5px">
-              <div class="left">
-                {% if answer.pk in question.correct_answers or answer.pk in question.incorrect_answers %}
-                  <input type="checkbox" disabled checked="checked" style="margin-bottom:5px; margin-right: 10px" id="{{ answer.id }}">
-                {% else %}
-                  <div style="padding-right: 2px; padding-bottom: 7px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
-                {%  endif %}
-              </div>
-                <label for="{{ answer.id }}" style="display: inline">
-                  {{ answer.text }}
-                </label>
-            </div>
-            {% endfor %}
         </fieldset>
         {% endfor %}
     </form>

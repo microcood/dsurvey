@@ -324,31 +324,11 @@ class TestResultView(SurveyAccessMixin, DetailView):
         total_count = self.object.questions.count()
         total_sum = 0
         context_questions = self.object.questions
-        for question in context_questions:
-            correct = question.answers.filter(is_correct=True)
-            replies = self.test_response.replies.filter(question=question)
-            correct_replies = replies.filter(answer__is_correct=True)
-            question.correct_answers = []
-            question.incorrect_answers = []
-
-            # this part for template only
-            for reply in replies:
-                if reply.answer.is_correct:
-                    question.correct_answers.append(reply.answer.pk)
-                else:
-                    question.incorrect_answers.append(reply.answer.pk)
-
-            if correct.count() == replies.count() == correct_replies.count():
-                total_sum += 1
-                question.total = 1
-            elif correct_replies.count() > 0:
-                question.total = 0.5
-                total_sum += 0.5
-            else:
-                question.total = 0
-
-        results = (total_sum / total_count) * 100
+        incorrect_questions = context_questions.filter(
+                        answer__is_correct=False).values_list('id', flat=True)
+        results = self.test_response.result_percent
         context['questions'] = context_questions
+        context['incorrect_questions'] = incorrect_questions
         context['test'] = self.object
         context['results'] = results
         context['test_response'] = self.test_response
